@@ -5,15 +5,14 @@ from typing import List, Set
 # Константы и данные
 MAX_ATTEMPTS = 6
 
-WORDS = list(str(word) for word in open("words.txt", 'r').read().replace("\n", "").split(" ") if word != "")
+WORDS = []
 
-with open("stats.txt", 'r') as f:
-    stats = {
-        "games_played": int(f.readline().split(" ")[-1]),
-        "games_won": int(f.readline().split(" ")[-1]),
-        "total_score": int(f.readline().split(" ")[-1]),
-        "best_score": int(f.readline().split(" ")[-1])
-    }
+stats = {
+    "games_played": 0,
+    "games_won": 0,
+    "total_score": 0,
+    "best_score": 0,
+}
 
 def main():
     print("Добро пожаловать в игру 'Виселица'!")
@@ -230,26 +229,34 @@ def get_user_guess(guessed_letters: Set[str]) -> str:
 def check_win(secret_word: str, guessed_letters: Set[str]) -> bool:
     """Проверка, угадано ли все слово"""
 
-    try:
-        for char in secret_word:
-            if char not in guessed_letters:
-                return False
+    for char in secret_word:
+        if char not in guessed_letters:
+            return False
 
-        return True
-
-    except Exception as e:
-        print(f"Ошибка при проверке победы!\n{e}")
-        return True
+    return True
 
 def calculate_score(secret_word: str, attempts_used: int) -> int:
     """Вычисление счета за игру"""
 
+    return len(secret_word) * 10 - attempts_used * 5
+
+
+def update_stats_file():
+    """Обновление статистики в файле"""
+
     try:
-        return len(secret_word) * 10 - attempts_used * 5
+        global stats
+        with open("stats.txt", 'w') as f:
+                f.write(f'''Games played: {stats["games_played"]}
+Games won: {stats["games_won"]}
+Total score: {stats["total_score"]}
+Best score: {stats["best_score"]}''')
 
     except Exception as e:
-        print(f"Ошибка при вычислении счёта:\n{e}")
-        return -1
+        print(f"Ошибка при записи статистики в файл:\n{e}")
+
+    return
+
 
 def update_stats(won: bool, score: int):
     """Обновление статистики в памяти"""
@@ -262,15 +269,11 @@ def update_stats(won: bool, score: int):
         stats["total_score"] += score
         stats["best_score"] = max(stats["best_score"], score)
 
-        with open("stats.txt", 'w') as f:
-            f.write(f'''Games played: {stats["games_played"]}
-Games won: {stats["games_won"]}
-Total score: {stats["total_score"]}
-Best score: {stats["best_score"]}''')
+        update_stats_file()
 
     except Exception as e:
         print(f"Ошибка при обновлении статистики:\n{e}")
-    
+ 
     return
 
 def show_stats():
@@ -293,5 +296,40 @@ def show_stats():
 
     return
 
+def get_words() -> list:
+    """Чтение списка слов из файла"""
+
+    try:
+        with open("words.txt", 'r') as f:
+            f = f.read().replace("\n", " ").split()
+            words = list(str(word) for word in f if word != "")
+    
+        return words
+
+    except Exception as e:
+        print(f"Ошибка при чтении списка слов:\n{e}")
+        return ["ОШИБКА"]
+
+def get_stats() -> list:
+    """Чтение статистики из файла"""
+
+    try:
+        with open("stats.txt", 'r') as f:
+            stats = {
+                "games_played": int(f.readline().split(" ")[-1]),
+                "games_won": int(f.readline().split(" ")[-1]),
+                "total_score": int(f.readline().split(" ")[-1]),
+                "best_score": int(f.readline().split(" ")[-1])
+            }
+        return stats
+
+    except Exception as e:
+        print(f"Ошибка при чтении статистики:\n{e}")
+        default_stats = {"games_played": 0, "games_won": 0, "total_score": 0, "best_score": 0}
+        return default_stats
+
+
 if __name__ == "__main__":
+    WORDS = get_words()
+    stats = get_stats()
     main()
